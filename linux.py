@@ -56,7 +56,6 @@ def linux_flags(env):
             -O2
             -Wall
             -Wextra
-            -Werror
         '''.split(),
     }),
     env.MergeFlags({

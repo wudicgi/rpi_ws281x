@@ -49,6 +49,7 @@ platforms = [
             ],
             'LINKFLAGS' : [
                 "-lrt",
+                "-lpthread",
             ],
         },
     ], 
