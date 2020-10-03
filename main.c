@@ -661,7 +661,9 @@ void Ws2812_convertRgbData(uint8_t *srcData, int srcLength) {
         g = *(srcData++);
         b = *(srcData++);
 
-        ledstring.channel[0].leds[i] = (r << 16) | (g << 8) | b;
+//        matrix[i] = (uint32_t)(((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b);
+
+        ledstring.channel[0].leds[i] = (uint32_t)(((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b);
     }
 }
 
@@ -718,7 +720,8 @@ int main(int argc, char *argv[])
         printf("hasNewData = %s\n", (hasNewData ? "true" : "false"));
 
         if (hasNewData) {
-            Ws2812_convertRgbData(_rgbDataBuffer, RGB_DATA_BUFFER_SIZE);
+            Ws2812_convertRgbData(_rgbDataBuffer, (width * height * 3));
+//            matrix_render();
 
             if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
             {
