@@ -49,11 +49,11 @@ void FrameBuffer_clear(void) {
 }
 
 /**
- * Ïò frame buffer ½áÎ²Ğ´ÈëÒ»¸ö frame
+ * å‘ frame buffer ç»“å°¾å†™å…¥ä¸€ä¸ª frame
  *
- * @showTime    ÏÔÊ¾Ê±¼ä
- * @data        Êı¾İ
- * @dataLength  Êı¾İµÄ³¤¶È
+ * @showTime    æ˜¾ç¤ºæ—¶é—´
+ * @data        æ•°æ®
+ * @dataLength  æ•°æ®çš„é•¿åº¦
  */
 bool FrameBuffer_write(uint32_t showTime, uint8_t *data, int dataLength) {
     int frameLength = (((sizeof(Frame) + dataLength) + 3) / 4) * 4;
@@ -61,13 +61,13 @@ bool FrameBuffer_write(uint32_t showTime, uint8_t *data, int dataLength) {
     int writeEndOffset = (_writeOffset + frameLength + GAP_SIZE);
 
     if ((_writeOffset < _readOffset) && (writeEndOffset > _readOffset)) {
-        // _data_buffer ÒÑÂú
+        // _data_buffer å·²æ»¡
         return false;
     }
 
     if (writeEndOffset > BUFFER_SIZE) {
         if ((0 + frameLength + GAP_SIZE) > _readOffset) {
-            // _data_buffer ÒÑÂú
+            // _data_buffer å·²æ»¡
             return false;
         }
 
@@ -92,15 +92,15 @@ bool FrameBuffer_write(uint32_t showTime, uint8_t *data, int dataLength) {
 }
 
 /**
- * ¼ì²é frame buffer ÖĞÊÇ·ñÓĞ frame ¿É¶Á
+ * æ£€æŸ¥ frame buffer ä¸­æ˜¯å¦æœ‰ frame å¯è¯»
  *
  * @time
  *
- * @return      ÓĞ frame ¿É¶Á·µ»Ø true, ·ñÔò·µ»Ø false
+ * @return      æœ‰ frame å¯è¯»è¿”å› true, å¦åˆ™è¿”å› false
  */
 bool FrameBuffer_canRead(uint32_t time) {
     if (_readOffset == _writeOffset) {
-        // _data_buffer Îª¿Õ
+        // _data_buffer ä¸ºç©º
         LOG_VERBOSE("empty -> false\r\n");
         return false;
     }
@@ -122,16 +122,16 @@ bool FrameBuffer_canRead(uint32_t time) {
 }
 
 /**
- * ´Ó frame buffer ¿ªÍ·¶ÁÈ¡Ò»¸ö frame
+ * ä» frame buffer å¼€å¤´è¯»å–ä¸€ä¸ª frame
  *
- * @data        Ö¸Ïò char* ĞÍ±äÁ¿µÄÖ¸Õë£¬º¯ÊıÖ´ĞĞºó¸Ã char* ±äÁ¿ÎªÖ¸Ïò frame Êı¾İµÄÖ¸Õë
- * @dataLength  Ö¸Ïò int ĞÍ±äÁ¿µÄÖ¸Õë£¬º¯ÊıÖ´ĞĞºó¸Ã int ±äÁ¿µÄÖµÎª frame Êı¾İµÄ³¤¶È
+ * @data        æŒ‡å‘ char* å‹å˜é‡çš„æŒ‡é’ˆï¼Œå‡½æ•°æ‰§è¡Œåè¯¥ char* å˜é‡ä¸ºæŒ‡å‘ frame æ•°æ®çš„æŒ‡é’ˆ
+ * @dataLength  æŒ‡å‘ int å‹å˜é‡çš„æŒ‡é’ˆï¼Œå‡½æ•°æ‰§è¡Œåè¯¥ int å˜é‡çš„å€¼ä¸º frame æ•°æ®çš„é•¿åº¦
  *
- * @return      Ö´ĞĞ³É¹¦·µ»Ø true, ·ñÔò·µ»Ø false
+ * @return      æ‰§è¡ŒæˆåŠŸè¿”å› true, å¦åˆ™è¿”å› false
  */
 bool FrameBuffer_read(uint8_t **data, int *dataLength) {
     if (_readOffset == _writeOffset) {
-        // _data_buffer Îª¿Õ
+        // _data_buffer ä¸ºç©º
         return false;
     }
 
