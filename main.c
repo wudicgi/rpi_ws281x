@@ -637,7 +637,7 @@ void *thread_display(void *para) {
 void test_func(void) {
     g_qlcloud_back_logic = ql_thread_create(1, OSI_STACK_SIZE_, (ql_thread_fn)thread_udp, NULL);
 
-    g_qlcloud_back_time = ql_thread_create(1, OSI_STACK_SIZE_, (ql_thread_fn)thread_display, NULL);
+//    g_qlcloud_back_time = ql_thread_create(1, OSI_STACK_SIZE_, (ql_thread_fn)thread_display, NULL);
 }
 
 #include <sys/time.h>
@@ -671,8 +671,6 @@ int main(int argc, char *argv[])
 
     sprintf(VERSION, "%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
 
-    test_func();
-
     /*
     while (1) {
         usleep(1000000 / 15);
@@ -689,6 +687,10 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "ws2811_init failed: %s\n", ws2811_get_return_t_str(ret));
         return ret;
+    }
+
+    if (g_qlcloud_back_logic == NULL) {
+        test_func();
     }
 
     while (running)
