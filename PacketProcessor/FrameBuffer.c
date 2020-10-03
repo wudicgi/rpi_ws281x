@@ -10,9 +10,9 @@ typedef struct {
     uint8_t     data[];
 } Frame;
 
-#define BUFFER_SIZE             8192
+#define BUFFER_SIZE             (32 * 1024) // 8192
 
-#define DATA_MAX_LENGTH         (3 * 100)
+#define DATA_MAX_LENGTH         (3 * 160)   // (3 * 100)
 
 static char _buffer[BUFFER_SIZE] = {0};
 

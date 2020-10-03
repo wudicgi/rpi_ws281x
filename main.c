@@ -616,12 +616,12 @@ void *thread_udp(void *para) {
                 continue;
             }
 
-            response_length = PacketProcessor_processPacket((uint8_t *)data, length, _udpResponseBuffer);
+            unsigned short response_length = PacketProcessor_processPacket((uint8_t *)data, length, _responsePacketBuffer);
             if (response_length == 0) {
                 continue;
             }
 
-            ql_udp_send(udp_socket, _udpResponseBuffer, response_length, 20);
+            ql_udp_send(udp_socket, _responsePacketBuffer, response_length, 20);
         }
     }
 }
