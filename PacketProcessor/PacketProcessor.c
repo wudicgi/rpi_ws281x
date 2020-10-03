@@ -1,6 +1,4 @@
-#include "stm32f0xx.h"
 #include "common.h"
-#include "crypto_auth.h"
 #include "BinaryUtil.h"
 #include "Packet.h"
 #include "PacketParser.h"
@@ -32,32 +30,6 @@ uint16_t _processHostCommandPacket(uint8_t *packetBuffer, int packetLength, uint
     LOG_DEBUG("Parse succeeded\n");
 
     switch (commandApdu->ins) {
-        case INS_CRYPTO_AUTH: {
-            printf("INS_CRYPTO_AUTH\r\n");
-
-            if (commandApdu->cdataLength != 20) {
-                return 0;
-            }
-
-            int ackPacketLength = CryptoAuth_perform(commandApdu->cdata, responseBuffer);
-            if (ackPacketLength < 0) {
-                ackPacketLength = 0;
-            }
-
-            return ackPacketLength;
-        }
-
-        case INS_CRYPTO_EXEC_CMD: {
-            printf("INS_CRYPTO_EXEC_CMD\r\n");
-
-            int ackPacketLength = CryptoAuth_executeCommand(commandApdu->cdata, commandApdu->cdataLength, responseBuffer);
-            if (ackPacketLength < 0) {
-                ackPacketLength = 0;
-            }
-
-            return ackPacketLength;
-        }
-
         case INS_LOAD: {
             int32_t packetId = 0;
             uint32_t hostTime = 0;
