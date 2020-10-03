@@ -579,6 +579,9 @@ static ql_thread_t *g_qlcloud_back_time = NULL;
 
 unsigned char g_udp_buf[QL_UDP_FRAME_MAX_SIZE];
 
+#include "Packet.h"
+#include "PacketProcessor.h"
+#include "FrameBuffer.h"
 
 #define RESPONSE_PACKET_BUFFER_SIZE   512
 
