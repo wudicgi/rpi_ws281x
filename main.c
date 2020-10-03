@@ -570,8 +570,6 @@ int ql_udp_recv(ql_udp_socket_t *sock, unsigned char *buf, unsigned int len, uns
 
 #define OSI_STACK_SIZE_ (32 * 1024)
 
-
-
 static ql_thread_t *g_qlcloud_back_logic = NULL;
 static ql_thread_t *g_qlcloud_back_time = NULL;
 
@@ -580,6 +578,11 @@ static ql_thread_t *g_qlcloud_back_time = NULL;
 #define QL_UDP_FRAME_MAX_SIZE           (8 * 1024)
 
 unsigned char g_udp_buf[QL_UDP_FRAME_MAX_SIZE];
+
+
+#define RESPONSE_PACKET_BUFFER_SIZE   512
+
+static uint8_t _responsePacketBuffer[RESPONSE_PACKET_BUFFER_SIZE] = {0};
 
 void *thread_udp(void *para) {
 	int length;
@@ -603,8 +606,19 @@ void *thread_udp(void *para) {
             printf("udp recv err:%d\n", length);
         } else if (length) {
             data[length] = 0;
-            printf("ql_udp_recv length:%d, data:%s\r\n", length, data);
+            printf("ql_udp_recv length:%d\r\n", length);
 //            platform_data_parser(udp_socket, data, length);
+
+            if ((data == NULL) || (length < PACKET_MIN_LENGTH)) {
+                continue;
+            }
+
+            response_length = PacketProcessor_processPacket((uint8_t *)data, length, _udpResponseBuffer);
+            if (response_length == 0) {
+                continue;
+            }
+
+            ql_udp_send(udp_socket, _udpResponseBuffer, response_length, 20);
         }
     }
 }
