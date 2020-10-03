@@ -60,8 +60,9 @@ static char VERSION[] = "XX.YY.ZZ";
 #define GPIO_PIN                12  // 18
 #define DMA                     10
 //#define STRIP_TYPE            WS2811_STRIP_RGB		// WS2812/SK6812RGB integrated chip+leds
-#define STRIP_TYPE              WS2811_STRIP_GBR		// WS2812/SK6812RGB integrated chip+leds
+//#define STRIP_TYPE              WS2811_STRIP_GBR		// WS2812/SK6812RGB integrated chip+leds
 //#define STRIP_TYPE            SK6812_STRIP_RGBW		// SK6812RGBW (NOT SK6812RGB)
+#define STRIP_TYPE              WS2811_STRIP_GRB
 
 #define WIDTH                   12  // 8
 #define HEIGHT                  6   // 8
@@ -611,7 +612,7 @@ void *thread_udp(void *para) {
             printf("udp recv err:%d\n", length);
         } else if (length) {
             data[length] = 0;
-            printf("ql_udp_recv length:%d\r\n", length);
+//            printf("ql_udp_recv length:%d\r\n", length);
 //            platform_data_parser(udp_socket, data, length);
 
             if ((data == NULL) || (length < PACKET_MIN_LENGTH)) {
@@ -660,6 +661,10 @@ void Ws2812_convertRgbData(uint8_t *srcData, int srcLength) {
         r = *(srcData++);
         g = *(srcData++);
         b = *(srcData++);
+
+        r = ((uint32_t)r * 3) / 4;
+        g = ((uint32_t)g * 3) / 4;
+        b = ((uint32_t)b * 3) / 4;
 
 //        matrix[i] = (uint32_t)(((uint32_t)r << 16) | ((uint32_t)g << 8) | (uint32_t)b);
 
@@ -717,7 +722,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        printf("hasNewData = %s\n", (hasNewData ? "true" : "false"));
+//        printf("hasNewData = %s\n", (hasNewData ? "true" : "false"));
 
         if (hasNewData) {
             Ws2812_convertRgbData(_rgbDataBuffer, (width * height * 3));
