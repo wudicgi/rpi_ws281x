@@ -699,10 +699,11 @@ int main(int argc, char *argv[])
 
     while (running)
     {
+        /*
         bool hasNewData = false;
         {
             uint32_t deviceTime = _getTimeStampInUs();
-            printf("deviceTime = %u\n", deviceTime);
+//            printf("deviceTime = %u\n", deviceTime);
 
             if (FrameBuffer_canRead(deviceTime)) {
                 uint8_t *data;
@@ -715,7 +716,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        printf("hasNewData = %s\n", (hasNewData ? "true" : "false");
+        printf("hasNewData = %s\n", (hasNewData ? "true" : "false"));
 
         if (hasNewData) {
             Ws2812_convertRgbData(_rgbDataBuffer, RGB_DATA_BUFFER_SIZE);
@@ -730,8 +731,8 @@ int main(int argc, char *argv[])
         }
 
         usleep((1000000 / 25) / 4);
+        */
 
-        /*
         matrix_raise();
         matrix_bottom();
         matrix_render();
@@ -744,7 +745,6 @@ int main(int argc, char *argv[])
 
         // 15 frames /sec
         usleep(1000000 / 15);
-        */
     }
 
     if (clear_on_exit) {
