@@ -376,9 +376,9 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 
 typedef void * (*ql_thread_fn)(void *);
 
-struct ql_thread_t {
+typedef struct ql_thread_t {
     pthread_t thread;
-};
+} ql_thread_t;
 
 ql_thread_t *ql_thread_create(int priority, int stack_size, ql_thread_fn fn, void* arg)
 {
@@ -391,7 +391,7 @@ ql_thread_t *ql_thread_create(int priority, int stack_size, ql_thread_fn fn, voi
 
     ret = pthread_create(&(ql_thread->thread), NULL, fn, arg);
     if (ret != 0) {
-        ql_free(ql_thread);
+        free(ql_thread);
         return NULL;
     }
 
@@ -401,7 +401,7 @@ ql_thread_t *ql_thread_create(int priority, int stack_size, ql_thread_fn fn, voi
 void ql_thread_destroy(ql_thread_t **thread)
 {
     if (thread && *thread) {
-        ql_free(*thread);
+        free(*thread);
         *thread = NULL;
     }
 }
@@ -413,6 +413,10 @@ void ql_thread_schedule(void)
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h> /* superset of previous */
+#include <arpa/inet.h>
+#include <errno.h>
 
 typedef struct ql_udp_socket {
     int sockfd;
@@ -427,7 +431,7 @@ ql_udp_socket_t *ql_udp_socket_create(unsigned int local_port)
 {
     ql_udp_socket_t *socket = NULL;
 
-    socket = (ql_udp_socket_t *)ql_malloc(sizeof(ql_udp_socket_t));
+    socket = (ql_udp_socket_t *)malloc(sizeof(ql_udp_socket_t));
     memset(socket, 0, sizeof(ql_udp_socket_t));
     socket->sockfd = -1;
     socket->local_port = local_port;
@@ -438,7 +442,7 @@ ql_udp_socket_t *ql_udp_socket_create(unsigned int local_port)
 void ql_udp_socket_destroy(ql_udp_socket_t **sock)
 {
     if (sock && *sock) {
-        ql_free(*sock);
+        free(*sock);
     }
 
     *sock = NULL;
@@ -578,8 +582,8 @@ static ql_thread_t *g_qlcloud_back_time = NULL;
 unsigned char g_udp_buf[QL_UDP_FRAME_MAX_SIZE];
 
 void *thread_udp(void *para) {
-	int len;
-    unsigned char *buf = g_udp_buf;
+	int length;
+    unsigned char *data = g_udp_buf;
 	static ql_udp_socket_t *udp_socket = NULL;
 
     udp_socket = ql_udp_socket_create(UDP_SERVER_PORT);
@@ -593,14 +597,14 @@ void *thread_udp(void *para) {
     }
 
     while (1) {
-        len = ql_udp_recv(udp_socket, buf, QL_UDP_FRAME_MAX_SIZE, 200);
+        length = ql_udp_recv(udp_socket, data, QL_UDP_FRAME_MAX_SIZE, 200);
 
-        if (len < 0) {
-            printf("udp recv err:%d\n", len);
-        } else if (len) {
-            buf[len] = 0;
-            printf("ql_udp_recv len:%d, buf:%s\r\n", len, buf);
-            platform_data_parser(udp_socket, buf, len);
+        if (length < 0) {
+            printf("udp recv err:%d\n", length);
+        } else if (length) {
+            data[length] = 0;
+            printf("ql_udp_recv length:%d, data:%s\r\n", length, data);
+//            platform_data_parser(udp_socket, data, length);
         }
     }
 }
