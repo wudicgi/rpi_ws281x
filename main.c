@@ -57,14 +57,14 @@ static char VERSION[] = "XX.YY.ZZ";
 
 // defaults for cmdline options
 #define TARGET_FREQ             WS2811_TARGET_FREQ
-#define GPIO_PIN                18
+#define GPIO_PIN                12  // 18
 #define DMA                     10
 //#define STRIP_TYPE            WS2811_STRIP_RGB		// WS2812/SK6812RGB integrated chip+leds
 #define STRIP_TYPE              WS2811_STRIP_GBR		// WS2812/SK6812RGB integrated chip+leds
 //#define STRIP_TYPE            SK6812_STRIP_RGBW		// SK6812RGBW (NOT SK6812RGB)
 
-#define WIDTH                   8
-#define HEIGHT                  8
+#define WIDTH                   12  // 8
+#define HEIGHT                  6   // 8
 #define LED_COUNT               (WIDTH * HEIGHT)
 
 int width = WIDTH;
@@ -583,9 +583,11 @@ unsigned char g_udp_buf[QL_UDP_FRAME_MAX_SIZE];
 #include "PacketProcessor.h"
 #include "FrameBuffer.h"
 
-#define RESPONSE_PACKET_BUFFER_SIZE   512
-
+#define RESPONSE_PACKET_BUFFER_SIZE     512
 static uint8_t _responsePacketBuffer[RESPONSE_PACKET_BUFFER_SIZE] = {0};
+
+#define RGB_DATA_BUFFER_SIZE            (3 * 256)
+static uint8_t _rgbDataBuffer[RGB_DATA_BUFFER_SIZE] = {0};
 
 void *thread_udp(void *para) {
 	int length;
@@ -638,6 +640,31 @@ void test_func(void) {
     g_qlcloud_back_time = ql_thread_create(1, OSI_STACK_SIZE_, (ql_thread_fn)thread_display, NULL);
 }
 
+#include <sys/time.h>
+
+static uint32_t _getTimeStampInUs() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return (uint32_t)(tv.tv_sec*(uint64_t)1000000+tv.tv_usec);
+}
+
+void Ws2812_convertRgbData(uint8_t *srcData, int srcLength) {
+    int ledCount = srcLength / 3;
+
+    if (ledCount > (RGB_DATA_BUFFER_SIZE / 3)) {
+        ledCount = (RGB_DATA_BUFFER_SIZE / 3);
+    }
+
+    uint8_t r, g, b;
+    for (int i = 0; i < ledCount; i++) {
+        r = *(srcData++);
+        g = *(srcData++);
+        b = *(srcData++);
+
+        ledstring.channel[0].leds[i] = (r << 16) | (g << 8) | b;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ws2811_return_t ret;
@@ -646,9 +673,11 @@ int main(int argc, char *argv[])
 
     test_func();
 
+    /*
     while (1) {
         usleep(1000000 / 15);
     }
+    */
 
     parseargs(argc, argv, &ledstring);
 
@@ -664,6 +693,36 @@ int main(int argc, char *argv[])
 
     while (running)
     {
+        bool hasNewData = false;
+        {
+            uint32_t deviceTime = _getTimeStampInUs();
+
+            if (FrameBuffer_canRead(deviceTime)) {
+                uint8_t *data;
+                int length;
+
+                if (FrameBuffer_read(&data, &length)) {
+                    memcpy(_rgbDataBuffer, data, length);
+                    hasNewData = true;
+                }
+            }
+        }
+
+        if (hasNewData) {
+            Ws2812_convertRgbData(_rgbDataBuffer, RGB_DATA_BUFFER_SIZE);
+
+            matrix_render();
+
+            if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
+            {
+                fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret));
+                break;
+            }
+        }
+
+        usleep((1000000 / 25) / 4);
+
+        /*
         matrix_raise();
         matrix_bottom();
         matrix_render();
@@ -676,6 +735,7 @@ int main(int argc, char *argv[])
 
         // 15 frames /sec
         usleep(1000000 / 15);
+        */
     }
 
     if (clear_on_exit) {

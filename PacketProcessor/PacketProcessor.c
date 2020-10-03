@@ -1,5 +1,4 @@
 #include "common.h"
-#include <sys/time.h>
 #include "BinaryUtil.h"
 #include "Packet.h"
 #include "PacketParser.h"
@@ -19,7 +18,9 @@
 // 10s
 #define MAX_BUFFERED_TIME_ALLOWED   (10 * 1000000)
 
-uint32_t _getTimeStampInUs() {
+#include <sys/time.h>
+
+static uint32_t _getTimeStampInUs() {
     struct timeval tv;
     gettimeofday(&tv,NULL);
     return (uint32_t)(tv.tv_sec*(uint64_t)1000000+tv.tv_usec);
