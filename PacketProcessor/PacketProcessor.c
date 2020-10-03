@@ -1,4 +1,5 @@
 #include "common.h"
+#include <sys/time.h>
 #include "BinaryUtil.h"
 #include "Packet.h"
 #include "PacketParser.h"
@@ -17,6 +18,12 @@
 
 // 10s
 #define MAX_BUFFERED_TIME_ALLOWED   (10 * 1000000)
+
+uint32_t _getTimeStampInUs() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return (uint32_t)(tv.tv_sec*(uint64_t)1000000+tv.tv_usec);
+}
 
 uint16_t _processHostCommandPacket(uint8_t *packetBuffer, int packetLength, uint8_t *responseBuffer) {
     LOG_DEBUG("Parse packet\n");
@@ -37,7 +44,7 @@ uint16_t _processHostCommandPacket(uint8_t *packetBuffer, int packetLength, uint
             uint8_t *ledData = NULL;
             int ledDataLength = 0;
 
-            uint32_t deviceTime = HAL_GetTick() * 1000;
+            uint32_t deviceTime = _getTimeStampInUs();
             int32_t timeDiff = 0;
 
             bool succeeded = true;
