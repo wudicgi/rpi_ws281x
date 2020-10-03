@@ -372,11 +372,262 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 }
 
 
+#include <pthread.h>
+
+typedef void * (*ql_thread_fn)(void *);
+
+struct ql_thread_t {
+    pthread_t thread;
+};
+
+ql_thread_t *ql_thread_create(int priority, int stack_size, ql_thread_fn fn, void* arg)
+{
+    int ret = 0;
+
+    ql_thread_t *ql_thread = (ql_thread_t *)malloc(sizeof(ql_thread_t));
+    if (NULL == ql_thread) {
+        return NULL;
+    }
+
+    ret = pthread_create(&(ql_thread->thread), NULL, fn, arg);
+    if (ret != 0) {
+        ql_free(ql_thread);
+        return NULL;
+    }
+
+    return ql_thread;
+}
+
+void ql_thread_destroy(ql_thread_t **thread)
+{
+    if (thread && *thread) {
+        ql_free(*thread);
+        *thread = NULL;
+    }
+}
+
+void ql_thread_schedule(void)
+{
+    return;
+}
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+typedef struct ql_udp_socket {
+    int sockfd;
+    unsigned int local_ip;
+    unsigned int local_port;
+    unsigned int remote_ip;
+    unsigned int remote_port;
+} ql_udp_socket_t;
+
+
+ql_udp_socket_t *ql_udp_socket_create(unsigned int local_port)
+{
+    ql_udp_socket_t *socket = NULL;
+
+    socket = (ql_udp_socket_t *)ql_malloc(sizeof(ql_udp_socket_t));
+    memset(socket, 0, sizeof(ql_udp_socket_t));
+    socket->sockfd = -1;
+    socket->local_port = local_port;
+
+    return socket;
+}
+
+void ql_udp_socket_destroy(ql_udp_socket_t **sock)
+{
+    if (sock && *sock) {
+        ql_free(*sock);
+    }
+
+    *sock = NULL;
+}
+
+int ql_udp_bind(ql_udp_socket_t *sock)
+{
+    if (sock == NULL) {
+        return -1;
+    }
+
+    sock->sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock->sockfd == -1) {
+        return -1;
+    }
+
+    struct sockaddr_in addr;
+    bzero(&addr, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(sock->local_port);
+
+    int re_flag = 1;
+    int re_len=sizeof(int);
+    setsockopt(sock->sockfd, SOL_SOCKET, SO_REUSEADDR, &re_flag, re_len);
+
+    if(bind(sock->sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+        return -1;
+    }
+    return 0;
+}
+int ql_udp_close(ql_udp_socket_t *sock)
+{
+    if (sock && sock->sockfd != -1) {
+        close(sock->sockfd);
+        sock->sockfd = -1;
+    }
+    return 0;
+}
+
+int ql_udp_send(ql_udp_socket_t *sock, unsigned char *buf, unsigned int len, unsigned int timeout_ms)
+{
+    int ret = -1;
+    int sentlen = 0;
+    int totallen = 0;
+
+    if (sock == NULL || sock->sockfd == -1) {
+        return ret;
+    }
+
+    struct sockaddr_in addr;
+    bzero(&addr, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = sock->remote_ip;
+    addr.sin_port = sock->remote_port;
+
+    struct timeval tv;
+    fd_set wfds;
+    FD_ZERO(&wfds);
+    FD_SET(sock->sockfd, &wfds);
+    tv.tv_sec = timeout_ms / 1000;
+    tv.tv_usec = (timeout_ms % 1000) * 1000;
+
+    if(ret = select(sock->sockfd + 1, NULL, &wfds, NULL, &tv) >= 0) {
+        if(FD_ISSET(sock->sockfd, &wfds))
+        {
+            totallen = len;
+            while (sentlen < totallen) {
+                ret = sendto(sock->sockfd, buf + sentlen, totallen - sentlen, 0, (struct sockaddr *)&addr, sizeof(addr));
+                if (ret < 0) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+                        continue;
+                    }else {
+                        break;
+                    }
+                }
+                sentlen += ret;
+            }
+            if(ret > 0) {
+                ret = totallen;
+            }
+        }
+    } else {
+        printf("udp_s select err:%d\n", ret);
+    }
+
+    return ret;
+}
+
+int ql_udp_recv(ql_udp_socket_t *sock, unsigned char *buf, unsigned int len, unsigned int timeout_ms)
+{
+    struct timeval tv;
+    fd_set readfds;
+    int n=0;
+    int ret = -1;
+
+    struct sockaddr_in remote_addr;
+    bzero(&remote_addr, sizeof(remote_addr));
+    int addr_len = sizeof(remote_addr);
+
+    FD_ZERO(&readfds);
+    FD_SET(sock->sockfd, &readfds);
+    tv.tv_sec = timeout_ms / 1000;
+    tv.tv_usec = (timeout_ms % 1000) * 1000;
+
+    if(ret = select(sock->sockfd + 1, &readfds, NULL, NULL, &tv) >= 0) {
+        if(FD_ISSET(sock->sockfd, &readfds))
+        {
+           if((n = recvfrom(sock->sockfd, buf, len, 0, (struct sockaddr*)&remote_addr, &addr_len )) >= 0)
+           {
+               sock->remote_port = remote_addr.sin_port;
+               sock->remote_ip   = remote_addr.sin_addr.s_addr;
+               ret = n;
+           }
+        } else {
+            ret = 0;
+        }
+    } else {
+        printf("udp_r select err:%d\n", ret);
+    }
+    return ret;
+}
+
+
+
+#define OSI_STACK_SIZE_ (32 * 1024)
+
+
+
+static ql_thread_t *g_qlcloud_back_logic = NULL;
+static ql_thread_t *g_qlcloud_back_time = NULL;
+
+#define UDP_SERVER_PORT                 1025
+
+#define QL_UDP_FRAME_MAX_SIZE           (8 * 1024)
+
+unsigned char g_udp_buf[QL_UDP_FRAME_MAX_SIZE];
+
+void *thread_udp(void *para) {
+	int len;
+    unsigned char *buf = g_udp_buf;
+	static ql_udp_socket_t *udp_socket = NULL;
+
+    udp_socket = ql_udp_socket_create(UDP_SERVER_PORT);
+    if (udp_socket == NULL) {
+        return;
+    }
+
+    if(ql_udp_bind(udp_socket)){
+        printf("udp bind err.\n");
+        return;
+    }
+
+    while (1) {
+        len = ql_udp_recv(udp_socket, buf, QL_UDP_FRAME_MAX_SIZE, 200);
+
+        if (len < 0) {
+            printf("udp recv err:%d\n", len);
+        } else if (len) {
+            buf[len] = 0;
+            printf("ql_udp_recv len:%d, buf:%s\r\n", len, buf);
+            platform_data_parser(udp_socket, buf, len);
+        }
+    }
+}
+
+void *thread_display(void *para) {
+    while (1) {
+        usleep((1000000 / 25) / 4);
+    }
+}
+
+void test_func(void) {
+    g_qlcloud_back_logic = ql_thread_create(1, OSI_STACK_SIZE_, (ql_thread_fn)thread_udp, NULL);
+
+    g_qlcloud_back_time = ql_thread_create(1, OSI_STACK_SIZE_, (ql_thread_fn)thread_display, NULL);
+}
+
 int main(int argc, char *argv[])
 {
     ws2811_return_t ret;
 
     sprintf(VERSION, "%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
+
+    test_func();
+
+    while (1) {
+        usleep(1000000 / 15);
+    }
 
     parseargs(argc, argv, &ledstring);
 
