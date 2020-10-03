@@ -689,15 +689,20 @@ int main(int argc, char *argv[])
         return ret;
     }
 
+    printf("aaa111\n");
+
     if (g_qlcloud_back_logic == NULL) {
         test_func();
     }
+
+    printf("aaa222\n");
 
     while (running)
     {
         bool hasNewData = false;
         {
             uint32_t deviceTime = _getTimeStampInUs();
+            printf("deviceTime = %u\n", deviceTime);
 
             if (FrameBuffer_canRead(deviceTime)) {
                 uint8_t *data;
@@ -709,6 +714,8 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        printf("hasNewData = %s\n", (hasNewData ? "true" : "false");
 
         if (hasNewData) {
             Ws2812_convertRgbData(_rgbDataBuffer, RGB_DATA_BUFFER_SIZE);
