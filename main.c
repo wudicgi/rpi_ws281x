@@ -699,7 +699,6 @@ int main(int argc, char *argv[])
 
     while (running)
     {
-        /*
         bool hasNewData = false;
         {
             uint32_t deviceTime = _getTimeStampInUs();
@@ -721,8 +720,6 @@ int main(int argc, char *argv[])
         if (hasNewData) {
             Ws2812_convertRgbData(_rgbDataBuffer, RGB_DATA_BUFFER_SIZE);
 
-            matrix_render();
-
             if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
             {
                 fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret));
@@ -731,8 +728,8 @@ int main(int argc, char *argv[])
         }
 
         usleep((1000000 / 25) / 4);
-        */
 
+        /*
         matrix_raise();
         matrix_bottom();
         matrix_render();
@@ -745,6 +742,7 @@ int main(int argc, char *argv[])
 
         // 15 frames /sec
         usleep(1000000 / 15);
+        */
     }
 
     if (clear_on_exit) {
