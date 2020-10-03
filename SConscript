@@ -52,6 +52,13 @@ ws2811_slib = tools_env.SharedLibrary('libws2811', lib_srcs)
 # Test Program
 srcs = Split('''
     main.c
+    PacketProcessor/BinaryUtil.c
+    PacketProcessor/Debug.c
+    PacketProcessor/FrameBuffer.c
+    PacketProcessor/PacketBuilder.c
+    PacketProcessor/PacketParser.c
+    PacketProcessor/PacketProcessor.c
+    PacketProcessor/TlvReader.c
 ''')
 
 objs = []

@@ -45,6 +45,7 @@ platforms = [
         [ 'linux', 'version' ], # Scons tool (linux, avr, etc.)
         {                       # Special environment setup
             'CPPPATH' : [
+                "PacketProcessor"
             ],
             'LINKFLAGS' : [
                 "-lrt",
